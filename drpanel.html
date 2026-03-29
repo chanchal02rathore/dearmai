@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DermAI — Doctor Clinical Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  
+/* ══════════════════════════════════════════
+   GLOBAL DESIGN TOKENS (matches main app)
+══════════════════════════════════════════ */
+:root {
+  --bg: #060606;
+  --bg2: #0d0d0d;
+  --surface: #121212;
+  --surface2: #1a1a1a;
+  --border: #2b2b2b;
+
+  /* 🏆 REAL PREMIUM GOLD */
+  --accent: #c9a84e;     /* main gold (soft matte) */
+  --accent2: #f0d67a;    /* highlight gold */
+  --accent3: #8f742c;    /* deep gold shadow */
+
+  --text: #f5f5f5;
+  --text2: #a1a1a1;
+  --text3: #5c5c5c;
+
+  --glow-gold: 0 0 25px rgba(236, 210, 139, 0.25);
+
+  --r: 12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+
+/* ══ PAGES ══ */
+.page{display:none;position:relative;z-index:1;min-height:100vh}
+.page.active{display:block}
+
+/* ══ TOPBAR ══ */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(10,12,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;padding:0 28px;gap:16px}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--fh);font-size:17px;font-weight:800;letter-spacing:-.5px;cursor:pointer;text-decoration:none;color:var(--text)}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.logo em{color:var(--accent);font-style:normal}
+.topbar-nav{display:flex;gap:4px;margin-left:24px}
+.nav-btn{background:none;border:none;color:var(--text2);font-family:var(--fb);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .15s;letter-spacing:.03em}
+.nav-btn:hover{color:var(--text);background:var(--surface2)}
+.nav-btn.active{color:var(--accent);background:rgba(0,229,160,.08)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;font-size:11px}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.tag{font-size:10px;font-weight:500;letter-spacing:.08em;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--text2);text-transform:uppercase}
+.tag.live{border-color:var(--accent);color:var(--accent);animation:pulse-b 2s infinite}
+.tag.doc{border-color:var(--accent2);color:var(--accent2)}
+/* NAV LINKS */
+nav a {
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 14px;
+  font-family: var(--fh);
+  font-weight: 600;
+  padding: 6px 10px;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+/* ✨ HOVER TEXT GLOW */
+nav a:hover {
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(201,168,78,0.6);
+}
+
+/* 🔥 UNDERLINE (center grow) */
+nav a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  transform: translateX(-50%);
+  transition: all 0.3s ease;
+}
+
+/* show underline on hover */
+nav a:hover::after {
+  width: 100%;
+  /* ===== NAV FONT FIX ===== */
+nav a,
+.nav-btn {
+  font-family: 'DM Sans', sans-serif;   /* clean modern font */
+  font-size: 15px;
+  font-weight: 600;                     /* same thickness */
+  letter-spacing: 0.4px;
+  color: #aab0b6;                       /* soft grey */
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+/* hover */
+nav a:hover,
+.nav-btn:hover {
+  color: #c9a84e;                       /* gold */
+}
+
+/* active (Dashboard jaisa) */
+nav a.active,
+.nav-btn.active {
+  color: #c9a84e;
+  font-weight: 600;
+}
+
+}@keyframes pulse-b{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.4)}50%{box-shadow:0 0 0 4px rgba(0,229,160,0)}}
+
+/* ══ CARD ══ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:var(--fh);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text2)}
+.card-body{padding:18px}
+
+/* ══ BUTTONS ══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:var(--r2);border:none;cursor:pointer;font-family:var(--fh);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .18s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#00c47a);color:#000}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:var(--glow-g)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-blue{background:linear-gradient(135deg,var(--accent2),#007acc);color:#fff}
+.btn-blue:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:var(--glow-b)}
+.btn-ghost{background:none;border:none;color:var(--text2);padding:8px 12px}
+.btn-ghost:hover{color:var(--text);background:var(--surface2)}
+.btn-danger{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:var(--accent3)}
+.btn-danger:hover{background:rgba(255,77,109,.2)}
+.btn-warn{background:rgba(255,179,71,.1);border:1px solid rgba(255,179,71,.3);color:var(--warn)}
+.btn-warn:hover{background:rgba(255,179,71,.2)}
+.btn-full{width:100%}
+.btn-sm{padding:6px 12px;font-size:11px}
+
+/* ══ FORM ══ */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;color:var(--text2);margin-bottom:6px;letter-spacing:.05em}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 13px;color:var(--text);font-family:var(--fb);font-size:12px;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input{appearance:none;cursor:pointer}
+
+/* ══ BADGES ══ */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid;font-weight:500}
+.badge-green{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08)}
+.badge-red{border-color:var(--accent3);color:var(--accent3);background:rgba(255,77,109,.08)}
+.badge-yellow{border-color:var(--warn);color:var(--warn);background:rgba(255,179,71,.08)}
+.badge-blue{border-color:var(--accent2);color:var(--accent2);background:rgba(0,153,255,.08)}
+.badge-purple{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.08)}
+
+/* ══ ANIMATIONS ══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.fade-up{animation:fadeUp .45s ease forwards}
+
+/* ══ TOAST ══ */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:11px 16px;font-size:12px;display:flex;align-items:center;gap:10px;animation:fadeUp .3s ease;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast-item.success{border-color:var(--accent)}
+.toast-item.error{border-color:var(--accent3)}
+.toast-item.info{border-color:var(--accent2)}
+
+/* ══ SPINNER ══ */
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.loading .spinner{display:block}
+
+/* ══════════════════════════════════════════
+   DOCTOR SIDEBAR LAYOUT
+══════════════════════════════════════════ */
+.doc-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 60px)}
+.doc-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;gap:3px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+.doc-sidebar-section{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 6px}
+.doc-sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r2);cursor:pointer;color:var(--text2);font-size:12px;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.doc-sidebar-item:hover{background:var(--surface2);color:var(--text)}
+.doc-sidebar-item.active{background:rgba(0,153,255,.09);color:var(--accent2)}
+.doc-sidebar-item .si-icon{font-size:15px;width:20px;text-align:center}
+.si-badge{margin-left:auto;font-size:9px;padding:1px 6px;border-radius:8px}
+.si-badge-red{background:var(--accent3);color:#fff}
+.si-badge-yellow{background:var(--warn);color:#000}
+.si-badge-green{background:var(--accent);color:#000}
+.doc-sidebar-bottom{margin-top:auto;border-top:1px solid var(--border);padding-top:12px}
+.doc-content{padding:28px;overflow-y:auto}
+
+/* ══════════════════════════════════════════
+   PAGE 1 — DOCTOR PANEL
+══════════════════════════════════════════ */
+.doc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
+.doc-greeting{font-family:var(--fh);font-size:22px;font-weight:800;letter-spacing:-.5px}
+.doc-greeting span{color:var(--accent2)}
+.doc-date{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* Metrics */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:border-color .2s;cursor:default}
+.metric-card:hover{border-color:var(--accent2)}
+.mc-icon{font-size:20px;margin-bottom:10px}
+.mc-val{font-family:var(--fh);font-size:24px;font-weight:800;letter-spacing:-.5px}
+.mc-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.mc-trend{font-size:10px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.mc-trend.up{color:var(--accent)}
+.mc-trend.alert{color:var(--accent3)}
+.mc-trend.info{color:var(--accent2)}
+
+/* AI Findings Queue */
+.findings-list{display:flex;flex-direction:column;gap:10px}
+.finding-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;transition:border-color .2s;cursor:pointer}
+.finding-item:hover{border-color:var(--accent2);background:var(--surface2)}
+.finding-item.urgent{border-color:rgba(255,77,109,.35);background:rgba(255,77,109,.04)}
+.finding-item.review{border-color:rgba(255,179,71,.3);background:rgba(255,179,71,.04)}
+.finding-item.approved{border-color:rgba(0,229,160,.2);opacity:.65}
+.finding-thumb{width:40px;height:40px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.finding-thumb img{width:100%;height:100%;object-fit:cover}
+.finding-meta{min-width:0}
+.finding-patient{font-family:var(--fh);font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.finding-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.finding-tags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.finding-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
+
+/* Risk bar */
+.risk-mini{height:4px;border-radius:2px;margin-top:5px;overflow:hidden;background:var(--border)}
+.risk-mini-fill{height:100%;border-radius:2px;transition:width .5s ease}
+
+/* AI note panel */
+.ai-note{background:rgba(0,153,255,.05);border:1px solid rgba(0,153,255,.15);border-radius:var(--r2);padding:12px 14px;font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.ai-note-title{font-family:var(--fh);font-size:11px;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:6px;margin-bottom:6px}
+
+/* Doctor notes textarea */
+.note-area{width:100%;min-height:100px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;color:var(--text);font-family:var(--fb);font-size:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .15s}
+.note-area:focus{border-color:var(--accent)}
+.note-area::placeholder{color:var(--text3)}
+
+/* Verdict selector */
+.verdict-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.verdict-opt{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s;font-family:var(--fh);font-size:11px;font-weight:700;color:var(--text2)}
+.verdict-opt:hover{border-color:var(--accent2);color:var(--text)}
+.verdict-opt.sel-benign{border-color:var(--accent);background:rgba(0,229,160,.08);color:var(--accent)}
+.verdict-opt.sel-uncertain{border-color:var(--warn);background:rgba(255,179,71,.08);color:var(--warn)}
+.verdict-opt.sel-malignant{border-color:var(--accent3);background:rgba(255,77,109,.08);color:var(--accent3)}
+
+/* Detail drawer */
+.detail-drawer{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:14px;animation:fadeUp .3s ease}
+.detail-drawer.open{display:block}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ABCDE bar row */
+.abcde-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(35,45,63,.4)}
+.abcde-row:last-child{border-bottom:none}
+.abcde-letter{font-family:var(--fh);font-size:14px;font-weight:800;width:20px;text-align:center}
+.abcde-label{font-size:11px;color:var(--text2);flex:1}
+.abcde-note{font-size:11px;color:var(--text);flex:2}
+.abcde-bar-wrap{width:80px}
+.abcde-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.abcde-bar-fill{height:100%;border-radius:2px}
+
+/* Rules list */
+.rule-row{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid rgba(35,45,63,.4)}
+.rule-row:last-child{border-bottom:none}
+
+/* ══════════════════════════════════════════
+   PAGE 2 — PATIENT MANAGEMENT
+══════════════════════════════════════════ */
+.pm-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.pm-search{flex:1;max-width:320px;position:relative}
+.pm-search input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:9px 13px 9px 36px;color:var(--text);font-family:var(--fb);font-size:12px;outline:none;transition:border-color .15s}
+.pm-search input:focus{border-color:var(--accent2)}
+.pm-search .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.4}
+.pm-filters{display:flex;gap:8px}
+.filter-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:7px 13px;font-family:var(--fb);font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s}
+.filter-btn:hover,.filter-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(0,153,255,.06)}
+
+/* Patient table */
+.pt-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.pt-table{width:100%;border-collapse:collapse}
+.pt-table thead th{background:var(--bg2);text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--fh);font-weight:700;white-space:nowrap}
+.pt-table thead th.sortable{cursor:pointer}
+.pt-table thead th.sortable:hover{color:var(--text)}
+.pt-table tbody tr{border-bottom:1px solid rgba(35,45,63,.4);transition:background .15s;cursor:pointer}
+.pt-table tbody tr:last-child{border-bottom:none}
+.pt-table tbody tr:hover{background:var(--surface2)}
+.pt-table td{padding:12px 14px;font-size:12px;vertical-align:middle}
+.pt-avatar{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.pt-name{font-family:var(--fh);font-size:13px;font-weight:700}
+.pt-id{font-size:10px;color:var(--text3);margin-top:1px}
+.risk-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--fh);font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;border:1px solid}
+.risk-pill.high{border-color:var(--accent3);color:var(--accent3);background:rgba(255,77,109,.08)}
+.risk-pill.medium{border-color:var(--warn);color:var(--warn);background:rgba(255,179,71,.08)}
+.risk-pill.low{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08)}
+
+/* Patient profile side panel */
+.pt-profile-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+.pt-profile-overlay.open{display:flex;align-items:stretch;justify-content:flex-end}
+.pt-profile-panel{width:460px;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;animation:slideIn .25s ease}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.pt-profile-header{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px;position:sticky;top:0;background:var(--surface);z-index:10}
+.pt-avatar-lg{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:22px;font-weight:800;color:#fff;flex-shrink:0}
+.pt-profile-name{font-family:var(--fh);font-size:16px;font-weight:800}
+.pt-profile-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.6}
+.close-btn{margin-left:auto;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:6px 10px;cursor:pointer;color:var(--text2);font-size:13px}
+.close-btn:hover{color:var(--text);border-color:var(--accent)}
+.pt-profile-body{padding:20px}
+
+/* Scan timeline in profile */
+.scan-tl{position:relative;padding-left:18px}
+.scan-tl::before{content:'';position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--border)}
+.scan-tl-item{position:relative;margin-bottom:14px}
+.scan-tl-dot{position:absolute;left:-14px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid}
+.scan-tl-content{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px}
+.scan-tl-title{font-family:var(--fh);font-size:12px;font-weight:700}
+.scan-tl-sub{font-size:10px;color:var(--text2);margin-top:2px}
+.scan-tl-date{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;text-align:center}
+.stat-box-val{font-family:var(--fh);font-size:18px;font-weight:800}
+.stat-box-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-top:1px solid var(--border)}
+.pg-info{font-size:11px;color:var(--text3)}
+.pg-btns{display:flex;gap:4px}
+.pg-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-family:var(--fb);font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s}
+.pg-btn:hover,.pg-btn.active{border-color:var(--accent2);color:var(--accent2)}
+
+/* ══════════════════════════════════════════
+   PAGE 3 — REPORT GENERATOR
+══════════════════════════════════════════ */
+.rg-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;max-width:1200px}
+.report-preview{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.report-prev-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.report-prev-title{font-family:var(--fh);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text2)}
+.report-prev-body{padding:28px;background:#fff;color:#1a1a2e;min-height:600px;font-family:'Georgia',serif;font-size:13px;line-height:1.7}
+
+/* PDF preview styles (inside white report) */
+.rpdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:2px solid #0099ff;margin-bottom:20px}
+.rpdf-logo{font-family:var(--fh);font-size:22px;font-weight:800;color:#0a0c0f}
+.rpdf-logo em{color:#00c47a;font-style:normal}
+.rpdf-meta{text-align:right;font-size:11px;color:#555}
+.rpdf-meta strong{display:block;font-size:13px;color:#222;margin-bottom:2px}
+.rpdf-section{margin-bottom:18px}
+.rpdf-section-title{font-family:var(--fh);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0099ff;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #e0e7f0}
+.rpdf-patient-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.rpdf-field{font-size:12px;color:#333}
+.rpdf-field-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
+.rpdf-verdict-box{display:flex;align-items:center;gap:12px;background:#f8f9ff;border:2px solid #0099ff;border-radius:8px;padding:12px 16px;margin-bottom:12px}
+.rpdf-verdict-icon{font-size:28px}
+.rpdf-verdict-label{font-family:var(--fh);font-size:18px;font-weight:800;color:#0a0c0f}
+.rpdf-verdict-sub{font-size:11px;color:#555;margin-top:2px}
+.rpdf-risk-bar{height:8px;background:#e0e7f0;border-radius:4px;overflow:hidden;margin-top:6px}
+.rpdf-risk-fill{height:100%;border-radius:4px;transition:width .5s}
+.rpdf-abcde-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
+.rpdf-abcde-table th{background:#f0f4ff;text-align:left;padding:6px 10px;font-family:var(--fh);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#444;border:1px solid #dde3ef}
+.rpdf-abcde-table td{padding:6px 10px;border:1px solid #dde3ef;color:#333;vertical-align:middle}
+.rpdf-rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+.rpdf-rule-item{background:#f8f9ff;border:1px solid #dde3ef;border-radius:6px;padding:7px 9px;font-size:11px}
+.rpdf-rule-item.triggered{border-color:#ffb347;background:#fffbf0}
+.rpdf-rule-item.high{border-color:#ff4d6d;background:#fff5f7}
+.rpdf-note-box{background:#f8f9ff;border:1px solid #dde3ef;border-radius:8px;padding:14px;font-size:12px;color:#333;line-height:1.7;white-space:pre-wrap}
+.rpdf-sig-area{display:flex;justify-content:space-between;align-items:flex-end;margin-top:20px;padding-top:14px;border-top:1px solid #dde3ef}
+.rpdf-sig-block{text-align:center}
+.rpdf-sig-line{width:180px;height:1px;background:#ccc;margin-bottom:4px}
+.rpdf-sig-name{font-family:var(--fh);font-size:12px;font-weight:700;color:#222}
+.rpdf-sig-sub{font-size:10px;color:#888}
+.rpdf-sig-stamp{width:60px;height:60px;border-radius:50%;border:3px solid #00c47a;display:flex;align-items:center;justify-content:center;font-size:22px;color:#00c47a}
+.rpdf-disclaimer{background:#fff8f0;border:1px solid #ffb347;border-radius:6px;padding:8px 12px;font-size:10px;color:#666;margin-top:12px;line-height:1.5}
+.rpdf-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:var(--fh);font-size:64px;font-weight:800;color:rgba(0,153,255,.05);pointer-events:none;white-space:nowrap;letter-spacing:4px}
+
+/* Report config panel */
+.rg-config{display:flex;flex-direction:column;gap:14px}
+.config-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.config-section-header{padding:12px 16px;border-bottom:1px solid var(--border);font-family:var(--fh);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);display:flex;align-items:center;gap:7px}
+.config-body{padding:14px 16px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(35,45,63,.4)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:12px;color:var(--text2)}
+.toggle{position:relative;width:38px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:20px;transition:.25s}
+.toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.25s}
+.toggle input:checked + .toggle-slider{background:var(--accent)}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px);background:#000}
+
+/* Export progress */
+.export-progress{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;display:none}
+.export-progress.show{display:block}
+.exp-bar-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.exp-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:3px;transition:width .4s ease}
+
+/* Signature pad */
+.sig-pad-wrap{border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;background:var(--bg2);position:relative}
+.sig-canvas{width:100%;height:80px;cursor:crosshair;display:block}
+.sig-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);pointer-events:none}
+.sig-placeholder.hidden{display:none}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:1000px){
+  .doc-layout{grid-template-columns:1fr}
+  .doc-sidebar{display:none}
+  .metrics-grid{grid-template-columns:repeat(2,1fr)}
+  .drawer-grid{grid-template-columns:1fr}
+  .rg-layout{grid-template-columns:1fr}
+  .pt-profile-panel{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════════ -->
+<!-- ================= TOP NAVBAR ================= -->
+<div class="topbar">
+
+  <!-- LOGO -->
+  <div class="logo" onclick="window.location.href='dashboard.html'">
+    <div class="logo-icon">🔬</div>
+    Derm<em>AI</em>
+  </div>
+
+  <!-- 🔥 GLOBAL NAV -->
+  <nav style="display:flex;gap:22px;margin-left:30px;">
+  <a href="index.html">Dashboard</a>
+  <a href="analyze.html">Analyze</a>
+  <a href="drpanel.html">Doctor Panel</a>
+    <a href="#">How It Works</a>
+  </nav>
+
+  <!-- RIGHT SIDE -->
+  <div class="topbar-right">
+    <span class="tag live">● Live</span>
+    <span class="tag doc">👨‍⚕️ Doctor Mode</span>
+
+    <div class="user-chip">
+      <div class="user-avatar">PM</div>
+      <span>Dr. Priya Mehta</span>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ================= INNER NAV (DOCTOR TABS) ================= -->
+<div style="padding:10px 28px;border-bottom:1px solid var(--border);background:var(--bg2)">
+
+  <div style="display:flex;gap:20px;">
+
+    <button class="nav-btn active" onclick="navigate('panel')">
+      🩺 Doctor Panel
+    </button>
+
+    <button class="nav-btn" onclick="navigate('patients')">
+      👥 Patients
+    </button>
+
+    <button class="nav-btn" onclick="navigate('reportgen')">
+      📄 Report Generator
+    </button>
+
+  </div>
+
+</div>
+<!-- ══════════════════════════════════════════
+     PAGE 1 — DOCTOR PANEL
+══════════════════════════════════════════ -->
+<div class="page active" id="page-panel">
+  <div class="doc-layout">
+
+    <!-- Sidebar -->
+    <aside class="doc-sidebar">
+      <div class="doc-sidebar-section">Review Queue</div>
+      <button class="doc-sidebar-item active" onclick="navigate('panel')"><span class="si-icon">🩺</span>AI Findings<span class="si-badge si-badge-red">3</span></button>
+      <button class="doc-sidebar-item" onclick="navigate('panel')"><span class="si-icon">⏳</span>Pending Approval<span class="si-badge si-badge-yellow">5</span></button>
+      <button class="doc-sidebar-item" onclick="navigate('panel')"><span class="si-icon">✅</span>Approved Today<span class="si-badge si-badge-green">12</span></button>
+      <div class="doc-sidebar-section">Clinical</div>
+      <button class="doc-sidebar-item" onclick="navigate('patients')"><span class="si-icon">👥</span>My Patients</button>
+      <button class="doc-sidebar-item" onclick="navigate('reportgen')"><span class="si-icon">📄</span>Report Generator</button>
+      <button class="doc-sidebar-item"><span class="si-icon">📅</span>Appointments</button>
+      <button class="doc-sidebar-item"><span class="si-icon">📊</span>Analytics</button>
+      <div class="doc-sidebar-section">Admin</div>
+      <button class="doc-sidebar-item"><span class="si-icon">⚙️</span>Settings</button>
+      <div class="doc-sidebar-bottom">
+        <div style="background:rgba(0,153,255,.07);border:1px solid rgba(0,153,255,.2);border-radius:var(--r2);padding:10px 12px;margin-bottom:8px">
+          <div style="font-family:var(--fh);font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:3px">AI Status</div>
+          <div style="font-size:10px;color:var(--text2)">Neurosymbolic engine online · Last sync 2 min ago</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="doc-content">
+      <div class="doc-header fade-up">
+        <div>
+          <div class="doc-greeting">Good morning, <span>Dr. Mehta</span> 👋</div>
+          <div class="doc-date" id="doc-date"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="navigate('patients')">👥 View All Patients</button>
+          <button class="btn btn-blue btn-sm" onclick="navigate('reportgen')">📄 Generate Report</button>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid fade-up" style="animation-delay:.05s">
+        <div class="metric-card">
+          <div class="mc-icon">🔍</div>
+          <div class="mc-val" style="color:var(--accent3)">3</div>
+          <div class="mc-lbl">Urgent Reviews</div>
+          <div class="mc-trend alert">⚠️ Requires attention</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-icon">⏳</div>
+          <div class="mc-val" style="color:var(--warn)">5</div>
+          <div class="mc-lbl">Pending Approval</div>
+          <div class="mc-trend info">↑ 2 since yesterday</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-icon">✅</div>
+          <div class="mc-val" style="color:var(--accent)">12</div>
+          <div class="mc-lbl">Approved Today</div>
+          <div class="mc-trend up">↑ On track</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-icon">🎯</div>
+          <div class="mc-val" style="color:var(--accent2)">94.2%</div>
+          <div class="mc-lbl">AI Accuracy</div>
+          <div class="mc-trend up">↑ +0.3% this week</div>
+        </div>
+      </div>
+
+      <!-- Main grid -->
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px" class="fade-up" style="animation-delay:.1s">
+
+        <!-- Left: AI findings queue -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">AI Findings Queue</span>
+              <div style="display:flex;gap:8px">
+                <span class="badge badge-red">3 Urgent</span>
+                <span class="badge badge-yellow">5 Review</span>
+              </div>
+            </div>
+            <div class="card-body" style="padding:14px">
+              <div class="findings-list" id="findings-list">
+
+                <!-- Finding 1 — Urgent -->
+                <div class="finding-item urgent" onclick="openFinding(0)">
+                  <div class="finding-thumb">🔬</div>
+                  <div class="finding-meta">
+                    <div class="finding-patient">Rahul Verma · #PT-0042</div>
+                    <div class="finding-sub">Lesion #7 — Left Arm · Analyzed 14 min ago</div>
+                    <div class="risk-mini"><div class="risk-mini-fill" style="width:82%;background:var(--accent3)"></div></div>
+                    <div class="finding-tags">
+                      <span class="badge badge-red">⚠️ MALIGNANT</span>
+                      <span class="badge badge-red">Risk 82%</span>
+                      <span class="badge badge-purple">6 Rules Fired</span>
+                    </div>
+                  </div>
+                  <div class="finding-actions">
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();approveVerdict('malignant',0)">Review</button>
+                  </div>
+                </div>
+
+                <!-- Finding 2 — Review -->
+                <div class="finding-item review" onclick="openFinding(1)">
+                  <div class="finding-thumb">🔍</div>
+                  <div class="finding-meta">
+                    <div class="finding-patient">Sneha Kulkarni · #PT-0038</div>
+                    <div class="finding-sub">Lesion #5 — Shoulder · Analyzed 1hr ago</div>
+                    <div class="risk-mini"><div class="risk-mini-fill" style="width:47%;background:var(--warn)"></div></div>
+                    <div class="finding-tags">
+                      <span class="badge badge-yellow">🔍 UNCERTAIN</span>
+                      <span class="badge badge-yellow">Risk 47%</span>
+                      <span class="badge badge-purple">3 Rules Fired</span>
+                    </div>
+                  </div>
+                  <div class="finding-actions">
+                    <button class="btn btn-warn btn-sm" onclick="event.stopPropagation();openFinding(1)">Review</button>
+                  </div>
+                </div>
+
+                <!-- Finding 3 — Urgent -->
+                <div class="finding-item urgent" onclick="openFinding(2)">
+                  <div class="finding-thumb">🧬</div>
+                  <div class="finding-meta">
+                    <div class="finding-patient">Arjun Sharma · #PT-0031</div>
+                    <div class="finding-sub">Lesion #3 — Neck · Analyzed 2hr ago</div>
+                    <div class="risk-mini"><div class="risk-mini-fill" style="width:74%;background:var(--accent3)"></div></div>
+                    <div class="finding-tags">
+                      <span class="badge badge-red">⚠️ MALIGNANT</span>
+                      <span class="badge badge-red">Risk 74%</span>
+                      <span class="badge badge-purple">5 Rules Fired</span>
+                    </div>
+                  </div>
+                  <div class="finding-actions">
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();openFinding(2)">Review</button>
+                  </div>
+                </div>
+
+                <!-- Finding 4 — Benign, pending -->
+                <div class="finding-item" onclick="openFinding(3)">
+                  <div class="finding-thumb">✅</div>
+                  <div class="finding-meta">
+                    <div class="finding-patient">Meera Iyer · #PT-0027</div>
+                    <div class="finding-sub">Lesion #2 — Back · Analyzed 3hr ago</div>
+                    <div class="risk-mini"><div class="risk-mini-fill" style="width:12%;background:var(--accent)"></div></div>
+                    <div class="finding-tags">
+                      <span class="badge badge-green">✅ BENIGN</span>
+                      <span class="badge badge-green">Risk 12%</span>
+                      <span class="badge">0 Rules Fired</span>
+                    </div>
+                  </div>
+                  <div class="finding-actions">
+                    <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openFinding(3)">Approve</button>
+                  </div>
+                </div>
+
+                <!-- Finding 5 — Approved -->
+                <div class="finding-item approved">
+                  <div class="finding-thumb">✅</div>
+                  <div class="finding-meta">
+                    <div class="finding-patient">Kavya Reddy · #PT-0019</div>
+                    <div class="finding-sub">Lesion #1 — Forearm · Approved 4hr ago</div>
+                    <div class="risk-mini"><div class="risk-mini-fill" style="width:8%;background:var(--accent)"></div></div>
+                    <div class="finding-tags">
+                      <span class="badge badge-green">✅ BENIGN</span>
+                      <span class="badge badge-blue">Approved by Dr. Mehta</span>
+                    </div>
+                  </div>
+                  <div class="finding-actions">
+                    <span class="badge badge-green">✓ Done</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Detail drawer -->
+              <div class="detail-drawer" id="detail-drawer">
+                <div class="drawer-header">
+                  <span style="font-family:var(--fh);font-size:14px;font-weight:800" id="drawer-title">Patient · Lesion Review</span>
+                  <button class="btn btn-ghost btn-sm" onclick="closeFinding()">✕ Close</button>
+                </div>
+
+                <div class="ai-note">
+                  <div class="ai-note-title">🤖 AI Clinical Summary</div>
+                  <div id="drawer-ai-summary">The neurosymbolic engine detected significant asymmetry and atypical pigment network patterns consistent with possible melanoma. Blue-white veil and multicomponent pattern were both triggered. Urgent dermatologist review recommended.</div>
+                </div>
+
+                <div class="drawer-grid">
+                  <div>
+                    <div class="card-title" style="margin-bottom:9px">ABCDE Evaluation</div>
+                    <div id="drawer-abcde"></div>
+                  </div>
+                  <div>
+                    <div class="card-title" style="margin-bottom:9px">Rule Activations</div>
+                    <div id="drawer-rules"></div>
+                  </div>
+                </div>
+
+                <div style="margin-top:16px">
+                  <div class="card-title" style="margin-bottom:8px">Override Verdict</div>
+                  <div class="verdict-options" id="drawer-verdict-opts">
+                    <div class="verdict-opt" onclick="setDrawerVerdict('benign',this)">✅ BENIGN</div>
+                    <div class="verdict-opt sel-malignant" onclick="setDrawerVerdict('uncertain',this)">🔍 UNCERTAIN</div>
+                    <div class="verdict-opt" onclick="setDrawerVerdict('malignant',this)">⚠️ MALIGNANT</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Doctor Notes</label>
+                    <textarea class="note-area" id="drawer-notes" placeholder="Add clinical observations, differential diagnosis, recommended follow-up..."></textarea>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                    <div class="form-group" style="margin-bottom:0">
+                      <label class="form-label">Recommended Action</label>
+                      <select class="form-input">
+                        <option>Refer to oncologist</option>
+                        <option>Biopsy recommended</option>
+                        <option>Monitor — 3 month follow-up</option>
+                        <option>Excision recommended</option>
+                        <option>Reassure — no action</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                      <label class="form-label">Follow-up Date</label>
+                      <input class="form-input" type="date" id="drawer-date">
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px">
+                    <button class="btn btn-primary" style="flex:1" onclick="approveAndSave()">
+                      <div class="spinner"></div>
+                      <span>💾 Approve & Save Report</span>
+                    </button>
+                    <button class="btn btn-blue" onclick="goToReportGen()">📄 Generate PDF</button>
+                    <button class="btn btn-danger" onclick="closeFinding()">Discard</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick stats chart -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Weekly Review Activity</span>
+              <span class="badge badge-blue">This Week</span>
+            </div>
+            <div class="card-body">
+              <canvas id="activity-chart" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Summary + Recent -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <!-- AI Agreement -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">AI vs Doctor Agreement</span></div>
+            <div class="card-body">
+              <div style="text-align:center;padding:8px 0 12px">
+                <div style="font-family:var(--fh);font-size:38px;font-weight:800;color:var(--accent)">91.8%</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:2px">Agreement rate this month</div>
+              </div>
+              <canvas id="agree-chart" height="130"></canvas>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;text-align:center">
+                <div><div style="font-family:var(--fh);font-size:14px;font-weight:800;color:var(--accent)">156</div><div style="font-size:10px;color:var(--text3)">Agreed</div></div>
+                <div><div style="font-family:var(--fh);font-size:14px;font-weight:800;color:var(--warn)">11</div><div style="font-size:10px;color:var(--text3)">Overridden</div></div>
+                <div><div style="font-family:var(--fh);font-size:14px;font-weight:800;color:var(--accent2)">3</div><div style="font-size:10px;color:var(--text3)">Escalated</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming appointments -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Today's Appointments</span><span class="badge badge-blue">4 remaining</span></div>
+            <div class="card-body" style="padding:12px">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:11px 13px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                    <span style="font-family:var(--fh);font-size:12px;font-weight:700">Rahul Verma</span>
+                    <span class="badge badge-red">Urgent</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text2)">🕐 2:30 PM · Malignant review follow-up</div>
+                </div>
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:11px 13px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                    <span style="font-family:var(--fh);font-size:12px;font-weight:700">Sneha Kulkarni</span>
+                    <span class="badge badge-yellow">Review</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text2)">🕓 4:00 PM · Uncertain case discussion</div>
+                </div>
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:11px 13px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                    <span style="font-family:var(--fh);font-size:12px;font-weight:700">Meera Iyer</span>
+                    <span class="badge badge-green">Routine</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text2)">🕔 5:15 PM · 6-month skin checkup</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disclaimer -->
+          <div style="background:rgba(255,179,71,.05);border:1px solid rgba(255,179,71,.2);border-radius:var(--r2);padding:12px 16px;font-size:11px;color:var(--text2);line-height:1.6;display:flex;gap:9px">
+            <span>⚠️</span>
+            <span><strong style="color:var(--warn)">Clinical Note:</strong> AI findings are decision-support tools only. Final diagnosis and treatment decisions rest with the licensed clinician.</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 — PATIENT MANAGEMENT
+══════════════════════════════════════════ -->
+<div class="page" id="page-patients">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <div class="doc-sidebar-section">Filters</div>
+      <button class="doc-sidebar-item active" onclick="filterPatients('all')"><span class="si-icon">👥</span>All Patients<span class="si-badge si-badge-green">42</span></button>
+      <button class="doc-sidebar-item" onclick="filterPatients('urgent')"><span class="si-icon">⚠️</span>High Risk<span class="si-badge si-badge-red">5</span></button>
+      <button class="doc-sidebar-item" onclick="filterPatients('review')"><span class="si-icon">🔍</span>Needs Review<span class="si-badge si-badge-yellow">8</span></button>
+      <button class="doc-sidebar-item" onclick="filterPatients('benign')"><span class="si-icon">✅</span>Cleared</button>
+      <button class="doc-sidebar-item" onclick="filterPatients('new')"><span class="si-icon">🆕</span>New Referrals<span class="si-badge si-badge-green">3</span></button>
+      <div class="doc-sidebar-section">Quick Actions</div>
+      <button class="doc-sidebar-item" onclick="navigate('panel')"><span class="si-icon">🩺</span>Review Queue</button>
+      <button class="doc-sidebar-item" onclick="navigate('reportgen')"><span class="si-icon">📄</span>Generate Report</button>
+    </aside>
+
+    <div class="doc-content">
+      <div class="doc-header fade-up">
+        <div>
+          <div class="doc-greeting">Patient <span>Management</span></div>
+          <div class="doc-date">Referred patients · Sorted by risk priority</div>
+        </div>
+        <button class="btn btn-blue btn-sm">+ Refer New Patient</button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="pm-toolbar fade-up" style="animation-delay:.05s">
+        <div class="pm-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search by name, ID, or lesion location..." id="pt-search" oninput="searchPatients(this.value)">
+        </div>
+        <div class="pm-filters">
+          <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+          <button class="filter-btn" onclick="setFilter(this,'malignant')">Malignant</button>
+          <button class="filter-btn" onclick="setFilter(this,'uncertain')">Uncertain</button>
+          <button class="filter-btn" onclick="setFilter(this,'benign')">Benign</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="btn btn-outline btn-sm">⬇ Export CSV</button>
+          <select class="form-input" style="width:auto;padding:6px 12px;font-size:11px">
+            <option>Sort: Risk ↓</option>
+            <option>Sort: Date ↓</option>
+            <option>Sort: Name A-Z</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Patient table -->
+      <div class="pt-table-wrap fade-up" style="animation-delay:.1s">
+        <table class="pt-table" id="pt-table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th class="sortable">Risk Score ↕</th>
+              <th>Last Scan</th>
+              <th>Verdict</th>
+              <th>Status</th>
+              <th>Referral Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pt-tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <span class="pg-info" id="pt-count">Showing 10 of 42 patients</span>
+          <div class="pg-btns">
+            <button class="pg-btn">← Prev</button>
+            <button class="pg-btn active">1</button>
+            <button class="pg-btn">2</button>
+            <button class="pg-btn">3</button>
+            <button class="pg-btn">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Profile Side Panel -->
+  <div class="pt-profile-overlay" id="pt-overlay" onclick="closePtProfile(event)">
+    <div class="pt-profile-panel">
+      <div class="pt-profile-header">
+        <div class="pt-avatar-lg" id="pp-avatar"></div>
+        <div style="flex:1">
+          <div class="pt-profile-name" id="pp-name">—</div>
+          <div class="pt-profile-meta" id="pp-meta">—</div>
+        </div>
+        <button class="close-btn" onclick="closePtProfileBtn()">✕</button>
+      </div>
+      <div class="pt-profile-body">
+        <!-- Stats -->
+        <div class="stats-row" id="pp-stats"></div>
+
+        <!-- Quick actions -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn btn-blue btn-sm" onclick="navigate('reportgen')">📄 Generate Report</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('panel')">🩺 Review AI Findings</button>
+          <button class="btn btn-outline btn-sm">📅 Book Appointment</button>
+        </div>
+
+        <!-- Scan history -->
+        <div class="card-title" style="margin-bottom:10px">Scan History</div>
+        <div class="scan-tl" id="pp-timeline"></div>
+
+        <!-- Notes -->
+        <div class="card-title" style="margin:14px 0 8px">Doctor Notes</div>
+        <textarea class="note-area" id="pp-notes" style="min-height:80px" placeholder="Add notes about this patient..."></textarea>
+        <button class="btn btn-primary btn-sm" style="margin-top:8px;width:100%" onclick="savePatientNote()">💾 Save Notes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 3 — REPORT GENERATOR
+══════════════════════════════════════════ -->
+<div class="page" id="page-reportgen">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <div class="doc-sidebar-section">Report Type</div>
+      <button class="doc-sidebar-item active"><span class="si-icon">📄</span>Clinical PDF</button>
+      <button class="doc-sidebar-item"><span class="si-icon">📊</span>Summary Report</button>
+      <button class="doc-sidebar-item"><span class="si-icon">📧</span>Email to Patient</button>
+      <button class="doc-sidebar-item"><span class="si-icon">🏥</span>Hospital Export</button>
+      <div class="doc-sidebar-section">Templates</div>
+      <button class="doc-sidebar-item" onclick="loadTemplate('full')"><span class="si-icon">📋</span>Full Clinical</button>
+      <button class="doc-sidebar-item" onclick="loadTemplate('brief')"><span class="si-icon">📝</span>Brief Summary</button>
+      <button class="doc-sidebar-item" onclick="loadTemplate('followup')"><span class="si-icon">🔁</span>Follow-up</button>
+      <div class="doc-sidebar-section">History</div>
+      <button class="doc-sidebar-item"><span class="si-icon">🕐</span>Recent Reports</button>
+    </aside>
+
+    <div class="doc-content">
+      <div class="doc-header fade-up">
+        <div>
+          <div class="doc-greeting">Report <span>Generator</span></div>
+          <div class="doc-date">Export clinical PDF with AI analysis + doctor signature</div>
+        </div>
+      </div>
+
+      <div class="rg-layout fade-up" style="animation-delay:.05s">
+
+        <!-- Report Preview -->
+        <div>
+          <div class="report-preview">
+            <div class="report-prev-toolbar">
+              <span class="report-prev-title">📄 Live Report Preview</span>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="updatePreview()">🔄 Refresh</button>
+                <button class="btn btn-primary btn-sm" id="export-btn" onclick="exportPDF()">
+                  <div class="spinner"></div>
+                  <span>⬇ Export PDF</span>
+                </button>
+              </div>
+            </div>
+            <div class="report-prev-body" id="report-preview" style="position:relative">
+              <div class="rpdf-watermark" id="rpdf-watermark">DRAFT</div>
+
+              <!-- Header -->
+              <div class="rpdf-header">
+                <div>
+                  <div class="rpdf-logo">Derm<em>AI</em></div>
+                  <div style="font-size:11px;color:#555;margin-top:2px">Neurosymbolic Melanoma Detection Platform</div>
+                  <div style="font-size:10px;color:#888;margin-top:1px">Reg. No: DERM-AI-2024-001 · HIPAA Compliant</div>
+                </div>
+                <div class="rpdf-meta">
+                  <strong id="rpdf-report-id">REPORT #RPT-20260327-042</strong>
+                  <span id="rpdf-date">Date: March 27, 2026</span><br>
+                  <span style="color:#0099ff;font-weight:600">CLINICAL DERMATOLOGY REPORT</span>
+                </div>
+              </div>
+
+              <!-- Patient Info -->
+              <div class="rpdf-section" id="rpdf-patient-section">
+                <div class="rpdf-section-title">Patient Information</div>
+                <div class="rpdf-patient-grid">
+                  <div class="rpdf-field"><div class="rpdf-field-label">Patient Name</div><strong id="rpdf-pt-name">Rahul Verma</strong></div>
+                  <div class="rpdf-field"><div class="rpdf-field-label">Patient ID</div><strong id="rpdf-pt-id">#PT-0042</strong></div>
+                  <div class="rpdf-field"><div class="rpdf-field-label">Date of Birth</div><span id="rpdf-pt-dob">15 Aug 1988 (Age 37)</span></div>
+                  <div class="rpdf-field"><div class="rpdf-field-label">Gender</div><span id="rpdf-pt-gender">Male</span></div>
+                  <div class="rpdf-field"><div class="rpdf-field-label">Lesion Location</div><span id="rpdf-pt-loc">Left Arm — Forearm</span></div>
+                  <div class="rpdf-field"><div class="rpdf-field-label">Scan Date</div><span id="rpdf-pt-scandate">March 27, 2026 at 09:14 AM</span></div>
+                </div>
+              </div>
+
+              <!-- AI Verdict -->
+              <div class="rpdf-section" id="rpdf-verdict-section">
+                <div class="rpdf-section-title">AI Analysis — Verdict</div>
+                <div class="rpdf-verdict-box" id="rpdf-verdict-box" style="border-color:#ff4d6d">
+                  <div class="rpdf-verdict-icon" id="rpdf-vicon">⚠️</div>
+                  <div style="flex:1">
+                    <div class="rpdf-verdict-label" id="rpdf-vlabel">MALIGNANT</div>
+                    <div class="rpdf-verdict-sub" id="rpdf-vsub">High-confidence malignancy signal detected by neurosymbolic fusion engine.</div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11px;color:#555">
+                      <span>Risk Score:</span>
+                      <strong id="rpdf-risk-pct" style="color:#ff4d6d">82%</strong>
+                      <div style="flex:1">
+                        <div class="rpdf-risk-bar"><div class="rpdf-risk-fill" id="rpdf-risk-fill" style="width:82%;background:#ff4d6d"></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ABCDE Table -->
+              <div class="rpdf-section" id="rpdf-abcde-section">
+                <div class="rpdf-section-title">ABCDE Criteria Evaluation</div>
+                <table class="rpdf-abcde-table">
+                  <thead><tr><th>Criterion</th><th>Finding</th><th>Score</th><th>Level</th></tr></thead>
+                  <tbody id="rpdf-abcde-tbody">
+                    <tr><td><strong style="color:#a78bfa">A — Asymmetry</strong></td><td>Significant asymmetry on both axes</td><td>8/10</td><td><span style="color:#ff4d6d;font-weight:700">High</span></td></tr>
+                    <tr><td><strong style="color:#ff4d6d">B — Border</strong></td><td>Highly irregular, notched edges</td><td>7/10</td><td><span style="color:#ff4d6d;font-weight:700">High</span></td></tr>
+                    <tr><td><strong style="color:#ffb347">C — Color</strong></td><td>4+ shades including blue-grey</td><td>8/10</td><td><span style="color:#ff4d6d;font-weight:700">High</span></td></tr>
+                    <tr><td><strong style="color:#0099ff">D — Diameter</strong></td><td>Estimated 9mm, exceeds threshold</td><td>7/10</td><td><span style="color:#ffb347;font-weight:700">Elevated</span></td></tr>
+                    <tr><td><strong style="color:#00c47a">E — Evolution</strong></td><td>Regression structures detected</td><td>7/10</td><td><span style="color:#ff4d6d;font-weight:700">High</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Symbolic Rules -->
+              <div class="rpdf-section" id="rpdf-rules-section">
+                <div class="rpdf-section-title">Symbolic Rule Activations (6 of 8 Fired)</div>
+                <div class="rpdf-rules-grid" id="rpdf-rules-grid">
+                  <div class="rpdf-rule-item high">🔴 <strong>Atypical Pigment Network</strong><br><span style="font-size:10px;color:#555">Irregular network in center quadrant</span></div>
+                  <div class="rpdf-rule-item high">🔴 <strong>Blue-White Veil</strong><br><span style="font-size:10px;color:#555">Structureless blue-white area detected</span></div>
+                  <div class="rpdf-rule-item triggered">🟡 <strong>Border Abruptness</strong><br><span style="font-size:10px;color:#555">Abrupt cutoff in 40% of border</span></div>
+                  <div class="rpdf-rule-item triggered">🟡 <strong>Multicomponent Pattern</strong><br><span style="font-size:10px;color:#555">4 distinct structures identified</span></div>
+                  <div class="rpdf-rule-item high">🔴 <strong>Melanocyte Irregularity</strong><br><span style="font-size:10px;color:#555">Atypical melanocyte distribution</span></div>
+                  <div class="rpdf-rule-item triggered">🟡 <strong>Regressive Structures</strong><br><span style="font-size:10px;color:#555">Scar-like areas present</span></div>
+                  <div style="opacity:.4" class="rpdf-rule-item">⚪ <strong>Vascular Pattern</strong><br><span style="font-size:10px;color:#555">Not triggered</span></div>
+                  <div style="opacity:.4" class="rpdf-rule-item">⚪ <strong>Asymmetric Follicular Openings</strong><br><span style="font-size:10px;color:#555">Not triggered</span></div>
+                </div>
+              </div>
+
+              <!-- Doctor Notes -->
+              <div class="rpdf-section" id="rpdf-notes-section">
+                <div class="rpdf-section-title">Clinician's Assessment & Notes</div>
+                <div class="rpdf-note-box" id="rpdf-doctor-note">Patient presents with a suspicious 9mm lesion on the left forearm with multiple high-risk features. AI analysis indicates MALIGNANT classification with 82% risk score. Six of eight dermoscopic rules were triggered, including Blue-White Veil and Atypical Pigment Network — both strong indicators of melanoma.
+
+Clinical recommendation: Urgent biopsy within 2 weeks. Refer to oncology department for further evaluation. Patient has been counseled on findings. Family history of skin cancer noted as an additional risk factor.
+
+Follow-up appointment scheduled for April 10, 2026.</div>
+              </div>
+
+              <!-- Signature -->
+              <div class="rpdf-sig-area" id="rpdf-sig-section">
+                <div class="rpdf-sig-block">
+                  <div id="rpdf-sig-preview" style="height:48px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px">
+                    <span style="font-family:'Brush Script MT',cursive;font-size:28px;color:#222">Dr. Priya Mehta</span>
+                  </div>
+                  <div class="rpdf-sig-line"></div>
+                  <div class="rpdf-sig-name" id="rpdf-doc-name">Dr. Priya Mehta, MD</div>
+                  <div class="rpdf-sig-sub" id="rpdf-doc-reg">Dermatology · Reg. No: MCI-2018-DRM-4421</div>
+                </div>
+                <div style="text-align:center">
+                  <div class="rpdf-sig-stamp">🔬</div>
+                  <div style="font-size:10px;color:#888;margin-top:4px">DermAI Verified</div>
+                </div>
+                <div class="rpdf-sig-block" style="text-align:right">
+                  <div style="font-size:12px;font-weight:700;color:#222;margin-bottom:4px">AI Engine</div>
+                  <div style="font-size:10px;color:#555">Neurosymbolic v3.2.1<br>EfficientNet-B4 · ABCDE Engine<br>Confidence: 94.1%</div>
+                </div>
+              </div>
+
+              <div class="rpdf-disclaimer">
+                ⚠️ <strong>Medical Disclaimer:</strong> This report is generated with AI assistance and reviewed by a licensed clinician. It is intended for clinical use only and does not replace in-person examination. All diagnoses must be confirmed by appropriate medical procedures. DermAI · Generated <span id="rpdf-gen-time"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Export Progress -->
+          <div class="export-progress" id="export-progress" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:11px;color:var(--text2)" id="exp-label">Generating PDF...</span>
+              <span style="font-size:11px;font-family:var(--fh);color:var(--accent2)" id="exp-pct">0%</span>
+            </div>
+            <div class="exp-bar-wrap"><div class="exp-bar-fill" id="exp-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Config Panel -->
+        <div class="rg-config">
+
+          <!-- Patient selector -->
+          <div class="config-section">
+            <div class="config-section-header">👤 Select Patient</div>
+            <div class="config-body">
+              <div class="form-group" style="margin-bottom:10px">
+                <label class="form-label">Patient</label>
+                <select class="form-input" id="rg-patient" onchange="updatePreview()">
+                  <option value="0">Rahul Verma · #PT-0042</option>
+                  <option value="1">Sneha Kulkarni · #PT-0038</option>
+                  <option value="2">Arjun Sharma · #PT-0031</option>
+                  <option value="3">Meera Iyer · #PT-0027</option>
+                  <option value="4">Kavya Reddy · #PT-0019</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Scan / Lesion</label>
+                <select class="form-input" id="rg-scan" onchange="updatePreview()">
+                  <option>Lesion #7 — Left Arm (Mar 27)</option>
+                  <option>Lesion #6 — Back (Mar 10)</option>
+                  <option>Lesion #5 — Shoulder (Feb 28)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Report sections -->
+          <div class="config-section">
+            <div class="config-section-header">📋 Include Sections</div>
+            <div class="config-body" style="padding:10px 16px">
+              <div class="toggle-row">
+                <span class="toggle-label">Patient Information</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleSection('rpdf-patient-section',this)"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">AI Verdict & Risk Score</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleSection('rpdf-verdict-section',this)"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">ABCDE Table</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleSection('rpdf-abcde-section',this)"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Symbolic Rule Activations</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleSection('rpdf-rules-section',this)"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Doctor Notes</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleSection('rpdf-notes-section',this)"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Doctor Signature</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleSection('rpdf-sig-section',this)"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row" style="border-bottom:none">
+                <span class="toggle-label">DRAFT Watermark</span>
+                <label class="toggle"><input type="checkbox" checked onchange="toggleWatermark(this)"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Doctor details -->
+          <div class="config-section">
+            <div class="config-section-header">👨‍⚕️ Doctor Details</div>
+            <div class="config-body">
+              <div class="form-group">
+                <label class="form-label">Doctor Name</label>
+                <input class="form-input" type="text" id="rg-doc-name" value="Dr. Priya Mehta, MD" oninput="document.getElementById('rpdf-doc-name').textContent=this.value">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Registration Number</label>
+                <input class="form-input" type="text" id="rg-doc-reg" value="MCI-2018-DRM-4421" oninput="document.getElementById('rpdf-doc-reg').textContent='Dermatology · Reg. No: '+this.value">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Digital Signature</label>
+                <div class="sig-pad-wrap">
+                  <canvas class="sig-canvas" id="sig-canvas" width="280" height="80"></canvas>
+                  <div class="sig-placeholder" id="sig-placeholder">✍️ Draw your signature here</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:6px;width:100%;justify-content:center" onclick="clearSig()">✕ Clear Signature</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Doctor notes -->
+          <div class="config-section">
+            <div class="config-section-header">📝 Edit Doctor Notes</div>
+            <div class="config-body">
+              <textarea class="note-area" id="rg-notes" style="min-height:110px" oninput="updateNotes(this.value)">Patient presents with a suspicious 9mm lesion on the left forearm with multiple high-risk features. AI analysis indicates MALIGNANT classification with 82% risk score. Six of eight dermoscopic rules were triggered, including Blue-White Veil and Atypical Pigment Network — both strong indicators of melanoma.
+
+Clinical recommendation: Urgent biopsy within 2 weeks. Refer to oncology department for further evaluation. Patient has been counseled on findings. Family history of skin cancer noted as an additional risk factor.
+
+Follow-up appointment scheduled for April 10, 2026.</textarea>
+            </div>
+          </div>
+
+          <!-- Export options -->
+          <div class="config-section">
+            <div class="config-section-header">⬇ Export</div>
+            <div class="config-body" style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-primary btn-full" onclick="exportPDF()">
+                <div class="spinner"></div>
+                <span>⬇ Download PDF Report</span>
+              </button>
+              <button class="btn btn-blue btn-full" onclick="showToast('📧 Report emailed to patient','success')">📧 Email to Patient</button>
+              <button class="btn btn-outline btn-full" onclick="showToast('🏥 Exported to hospital system','info')">🏥 Export to Hospital System</button>
+              <button class="btn btn-outline btn-full" onclick="window.print()">🖨️ Print Report</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════ */
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('nav-' + page);
+  if (nb) nb.classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (page === 'patients') renderPatientTable(PATIENTS);
+  if (page === 'panel') { initActivityChart(); initAgreeChart(); }
+  if (page === 'reportgen') { updatePreview(); initSigPad(); }
+}
+
+/* ══ DATE ══ */
+document.getElementById('doc-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('rpdf-date').textContent = 'Date: ' + new Date().toLocaleDateString('en-IN',{year:'numeric',month:'long',day:'numeric'});
+document.getElementById('rpdf-gen-time').textContent = new Date().toLocaleString('en-IN');
+
+/* ══ TOAST ══ */
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  const item = document.createElement('div');
+  item.className = 'toast-item ' + type;
+  item.textContent = msg;
+  t.appendChild(item);
+  setTimeout(() => item.remove(), 3500);
+}
+
+/* ══════════════════════════════════════════
+   PAGE 1 — DOCTOR PANEL LOGIC
+══════════════════════════════════════════ */
+const FINDINGS = [
+  {
+    title: 'Rahul Verma · Lesion #7 — Left Arm',
+    verdict: 'malignant', risk: 82,
+    summary: 'High-confidence malignancy signal. Atypical pigment network and blue-white veil both triggered. Urgent review required. Patient has family history of melanoma.',
+    abcde: [{l:'A',c:'#a78bfa',lbl:'Asymmetry',note:'Significant asymmetry both axes',score:8},{l:'B',c:'#ff4d6d',lbl:'Border',note:'Highly irregular, notched edges',score:7},{l:'C',c:'#ffb347',lbl:'Color',note:'4+ shades including blue-grey',score:8},{l:'D',c:'#0099ff',lbl:'Diameter',note:'~9mm, exceeds threshold',score:7},{l:'E',c:'#00e5a0',lbl:'Evolution',note:'Regression structures detected',score:7}],
+    rules: [{t:true,sev:'high',n:'Atypical Pigment Network',d:'Irregular network center-left quadrant'},{t:true,sev:'high',n:'Blue-White Veil',d:'Structureless blue area detected'},{t:true,sev:'med',n:'Border Abruptness',d:'40% border cutoff detected'},{t:true,sev:'med',n:'Multicomponent Pattern',d:'4 structures identified'},{t:true,sev:'high',n:'Melanocyte Irregularity',d:'Atypical distribution pattern'},{t:true,sev:'med',n:'Regressive Structures',d:'Scar-like areas present'},{t:false,sev:'',n:'Dermoscopic Vascular Pattern',d:'Not detected'},{t:false,sev:'',n:'Asymmetric Follicular Openings',d:'Not detected'}],
+    defaultNotes: 'Urgent clinical review required. AI findings strongly suggest melanoma. Recommend biopsy within 2 weeks and oncology referral. Patient counseled on findings.',
+    defaultVerdict: 'malignant'
+  },
+  {
+    title: 'Sneha Kulkarni · Lesion #5 — Shoulder',
+    verdict: 'uncertain', risk: 47,
+    summary: 'Uncertain classification — neural and symbolic engines partially agree. Border irregularity and atypical pigment network triggered at medium severity. Clinician review recommended.',
+    abcde: [{l:'A',c:'#a78bfa',lbl:'Asymmetry',note:'Mild asymmetry vertical axis',score:4},{l:'B',c:'#ff4d6d',lbl:'Border',note:'Slightly irregular edges',score:5},{l:'C',c:'#ffb347',lbl:'Color',note:'2-3 shades of brown',score:5},{l:'D',c:'#0099ff',lbl:'Diameter',note:'~5mm, borderline',score:4},{l:'E',c:'#00e5a0',lbl:'Evolution',note:'No regression structures',score:2}],
+    rules: [{t:true,sev:'med',n:'Atypical Pigment Network',d:'Mildly irregular network'},{t:true,sev:'med',n:'Border Abruptness',d:'20% border abruptness'},{t:true,sev:'low',n:'Multicomponent Pattern',d:'2 distinct structures noted'},{t:false,sev:'',n:'Blue-White Veil',d:'Not detected'},{t:false,sev:'',n:'Melanocyte Irregularity',d:'Not detected'},{t:false,sev:'',n:'Regressive Structures',d:'Not detected'},{t:false,sev:'',n:'Dermoscopic Vascular Pattern',d:'Not detected'},{t:false,sev:'',n:'Asymmetric Follicular Openings',d:'Not detected'}],
+    defaultNotes: 'UNCERTAIN finding. Features show mild asymmetry and slight border irregularity. Recommend dermoscopy follow-up in 3 months. Patient has family history of melanoma — elevated baseline risk.',
+    defaultVerdict: 'uncertain'
+  },
+  {
+    title: 'Arjun Sharma · Lesion #3 — Neck',
+    verdict: 'malignant', risk: 74,
+    summary: 'High malignancy risk detected. Multiple high-severity dermoscopic rules triggered. Blue-white veil and melanocyte irregularity present. Immediate clinical action recommended.',
+    abcde: [{l:'A',c:'#a78bfa',lbl:'Asymmetry',note:'Asymmetry on horizontal axis',score:7},{l:'B',c:'#ff4d6d',lbl:'Border',note:'Notched irregular border',score:6},{l:'C',c:'#ffb347',lbl:'Color',note:'Multi-shade pigmentation',score:7},{l:'D',c:'#0099ff',lbl:'Diameter',note:'~7mm estimated',score:6},{l:'E',c:'#00e5a0',lbl:'Evolution',note:'Possible regression patterning',score:6}],
+    rules: [{t:true,sev:'high',n:'Melanocyte Irregularity',d:'High irregularity distribution'},{t:true,sev:'high',n:'Blue-White Veil',d:'Blue area present upper quadrant'},{t:true,sev:'med',n:'Atypical Pigment Network',d:'Network in center region'},{t:true,sev:'med',n:'Border Abruptness',d:'30% abrupt border cutoff'},{t:true,sev:'med',n:'Multicomponent Pattern',d:'3 structures identified'},{t:false,sev:'',n:'Regressive Structures',d:'Not clearly detected'},{t:false,sev:'',n:'Dermoscopic Vascular Pattern',d:'Not detected'},{t:false,sev:'',n:'Asymmetric Follicular Openings',d:'Not detected'}],
+    defaultNotes: 'Second malignant finding this week. Lesion on neck requires biopsy. Referred patient to oncology. Follow up in 2 weeks.',
+    defaultVerdict: 'malignant'
+  },
+  {
+    title: 'Meera Iyer · Lesion #2 — Back',
+    verdict: 'benign', risk: 12,
+    summary: 'Low risk benign classification. No significant dermoscopic rules triggered. Regular nevus pattern consistent with benign compound nevi. Annual monitoring recommended.',
+    abcde: [{l:'A',c:'#a78bfa',lbl:'Asymmetry',note:'Symmetric appearance',score:1},{l:'B',c:'#ff4d6d',lbl:'Border',note:'Smooth, regular border',score:1},{l:'C',c:'#ffb347',lbl:'Color',note:'Uniform tan/brown',score:2},{l:'D',c:'#0099ff',lbl:'Diameter',note:'~3mm, well within range',score:1},{l:'E',c:'#00e5a0',lbl:'Evolution',note:'No changes noted',score:1}],
+    rules: [{t:false,sev:'',n:'Atypical Pigment Network',d:'Regular, benign-appearing network'},{t:false,sev:'',n:'Blue-White Veil',d:'Not detected'},{t:false,sev:'',n:'Border Abruptness',d:'Not detected'},{t:false,sev:'',n:'Multicomponent Pattern',d:'Single structure only'},{t:false,sev:'',n:'Melanocyte Irregularity',d:'Not detected'},{t:false,sev:'',n:'Regressive Structures',d:'Not detected'},{t:false,sev:'',n:'Dermoscopic Vascular Pattern',d:'Not detected'},{t:false,sev:'',n:'Asymmetric Follicular Openings',d:'Not detected'}],
+    defaultNotes: 'Benign finding confirmed. Low-risk nevus. Annual skin checkup recommended. No further action required at this time.',
+    defaultVerdict: 'benign'
+  }
+];
+
+let currentFinding = null;
+
+function openFinding(idx) {
+  const f = FINDINGS[idx];
+  currentFinding = idx;
+
+  document.getElementById('drawer-title').textContent = f.title;
+  document.getElementById('drawer-ai-summary').textContent = f.summary;
+  document.getElementById('drawer-notes').value = f.defaultNotes;
+
+  // ABCDE
+  const ab = document.getElementById('drawer-abcde');
+  ab.innerHTML = f.abcde.map(a => `
+    <div class="abcde-row">
+      <div class="abcde-letter" style="color:${a.c}">${a.l}</div>
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--text);font-weight:500">${a.lbl}</div>
+        <div style="font-size:10px;color:var(--text2)">${a.note}</div>
+      </div>
+      <div class="abcde-bar-wrap">
+        <div class="abcde-bar-bg"><div class="abcde-bar-fill" style="width:${a.score*10}%;background:${a.c}"></div></div>
+        <div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px">${a.score}/10</div>
+      </div>
+    </div>`).join('');
+
+  // Rules
+  const rl = document.getElementById('drawer-rules');
+  rl.innerHTML = f.rules.map(r => {
+    const icon = r.t ? (r.sev==='high'?'🔴':r.sev==='med'?'🟡':'🟢') : '⚪';
+    return `<div class="rule-row" style="opacity:${r.t?1:.35}">
+      <span style="font-size:12px">${icon}</span>
+      <div style="font-size:11px">
+        <strong style="display:block;color:var(--text);font-size:11px">${r.n}</strong>
+        <span style="color:var(--text2)">${r.d}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Verdict
+  document.querySelectorAll('#drawer-verdict-opts .verdict-opt').forEach(o => o.className = 'verdict-opt');
+  const selOpt = document.querySelector(`#drawer-verdict-opts .verdict-opt:nth-child(${f.defaultVerdict==='benign'?1:f.defaultVerdict==='uncertain'?2:3})`);
+  if (selOpt) selOpt.className = 'verdict-opt sel-' + f.defaultVerdict;
+
+  // Follow-up date
+  const d = new Date(); d.setMonth(d.getMonth() + 3);
+  document.getElementById('drawer-date').value = d.toISOString().split('T')[0];
+
+  const drawer = document.getElementById('detail-drawer');
+  drawer.classList.add('open');
+  drawer.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function closeFinding() {
+  document.getElementById('detail-drawer').classList.remove('open');
+}
+
+function setDrawerVerdict(v, el) {
+  document.querySelectorAll('#drawer-verdict-opts .verdict-opt').forEach(o => o.className = 'verdict-opt');
+  el.className = 'verdict-opt sel-' + v;
+}
+
+function approveAndSave() {
+  const btn = event.currentTarget;
+  btn.classList.add('loading');
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    closeFinding();
+    // Mark as approved
+    const items = document.querySelectorAll('.finding-item');
+    if (currentFinding !== null && items[currentFinding]) {
+      items[currentFinding].className = 'finding-item approved';
+      const acts = items[currentFinding].querySelector('.finding-actions');
+      if (acts) acts.innerHTML = '<span class="badge badge-green">✓ Approved</span>';
+    }
+    showToast('✅ Report approved and saved', 'success');
+  }, 1500);
+}
+
+function approveVerdict(v, idx) {
+  showToast('✅ Verdict set to ' + v.toUpperCase(), 'success');
+}
+
+function goToReportGen() {
+  navigate('reportgen');
+}
+
+/* ══ Charts (Panel) ══ */
+function initActivityChart() {
+  const ctx = document.getElementById('activity-chart');
+  if (!ctx) return;
+  Chart.defaults.color = '#8a96ab';
+  Chart.defaults.font.family = "'DM Mono', monospace";
+  Chart.defaults.font.size = 10;
+  new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [
+        {label:'Approved',data:[8,12,7,15,10,3,0],backgroundColor:'rgba(0,229,160,.5)',borderColor:'#00e5a0',borderWidth:1,borderRadius:4},
+        {label:'Overridden',data:[1,2,0,3,2,0,0],backgroundColor:'rgba(255,179,71,.5)',borderColor:'#ffb347',borderWidth:1,borderRadius:4}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8a96ab',font:{size:10}}}},scales:{y:{grid:{color:'#232d3f'},stacked:false},x:{grid:{display:false}}}}
+  });
+}
+
+function initAgreeChart() {
+  const ctx = document.getElementById('agree-chart');
+  if (!ctx) return;
+  new Chart(ctx.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['AI+Doctor Agreed','Doctor Override','Escalated'],
+      datasets: [{data:[156,11,3],backgroundColor:['rgba(0,229,160,.7)','rgba(255,179,71,.7)','rgba(0,153,255,.7)'],borderColor:['#00e5a0','#ffb347','#0099ff'],borderWidth:1}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#8a96ab',font:{size:10},padding:10}}}}
+  });
+}
+
+/* ══════════════════════════════════════════
+   PAGE 2 — PATIENT MANAGEMENT
+══════════════════════════════════════════ */
+const AVATARS = ['linear-gradient(135deg,#00e5a0,#0099ff)','linear-gradient(135deg,#a78bfa,#0099ff)','linear-gradient(135deg,#ff4d6d,#a78bfa)','linear-gradient(135deg,#ffb347,#ff4d6d)','linear-gradient(135deg,#0099ff,#00e5a0)','linear-gradient(135deg,#a78bfa,#ff4d6d)','linear-gradient(135deg,#00e5a0,#a78bfa)','linear-gradient(135deg,#ffb347,#a78bfa)','linear-gradient(135deg,#ff4d6d,#ffb347)','linear-gradient(135deg,#0099ff,#a78bfa)'];
+
+const PATIENTS = [
+  {id:'PT-0042',name:'Rahul Verma',age:37,gender:'M',risk:82,verdict:'malignant',location:'Left Arm',scanDate:'Mar 27, 2026',refDate:'Mar 20, 2026',status:'Urgent',scans:[{title:'Lesion #7 — Left Arm',risk:82,verdict:'malignant',date:'Mar 27, 2026',rules:6},{title:'Lesion #6 — Back',risk:18,verdict:'benign',date:'Feb 12, 2026',rules:0}]},
+  {id:'PT-0038',name:'Sneha Kulkarni',age:29,gender:'F',risk:47,verdict:'uncertain',location:'Shoulder',scanDate:'Mar 27, 2026',refDate:'Mar 15, 2026',status:'Review',scans:[{title:'Lesion #5 — Shoulder',risk:47,verdict:'uncertain',date:'Mar 27, 2026',rules:3},{title:'Lesion #4 — Forearm',risk:22,verdict:'benign',date:'Jan 30, 2026',rules:0}]},
+  {id:'PT-0031',name:'Arjun Sharma',age:45,gender:'M',risk:74,verdict:'malignant',location:'Neck',scanDate:'Mar 26, 2026',refDate:'Mar 10, 2026',status:'Urgent',scans:[{title:'Lesion #3 — Neck',risk:74,verdict:'malignant',date:'Mar 26, 2026',rules:5},{title:'Lesion #2 — Chest',risk:31,verdict:'uncertain',date:'Feb 5, 2026',rules:2},{title:'Lesion #1 — Shoulder',risk:9,verdict:'benign',date:'Jan 8, 2026',rules:0}]},
+  {id:'PT-0027',name:'Meera Iyer',age:34,gender:'F',risk:12,verdict:'benign',location:'Back',scanDate:'Mar 25, 2026',refDate:'Mar 8, 2026',status:'Cleared',scans:[{title:'Lesion #2 — Back',risk:12,verdict:'benign',date:'Mar 25, 2026',rules:0},{title:'Lesion #1 — Hand',risk:7,verdict:'benign',date:'Feb 14, 2026',rules:0}]},
+  {id:'PT-0019',name:'Kavya Reddy',age:52,gender:'F',risk:8,verdict:'benign',location:'Forearm',scanDate:'Mar 24, 2026',refDate:'Feb 28, 2026',status:'Cleared',scans:[{title:'Lesion #1 — Forearm',risk:8,verdict:'benign',date:'Mar 24, 2026',rules:0}]},
+  {id:'PT-0015',name:'Vikram Nair',age:61,gender:'M',risk:63,verdict:'uncertain',location:'Scalp',scanDate:'Mar 22, 2026',refDate:'Mar 5, 2026',status:'Review',scans:[{title:'Lesion #4 — Scalp',risk:63,verdict:'uncertain',date:'Mar 22, 2026',rules:4}]},
+  {id:'PT-0012',name:'Priya Sharma',age:41,gender:'F',risk:19,verdict:'benign',location:'Abdomen',scanDate:'Mar 20, 2026',refDate:'Feb 25, 2026',status:'Cleared',scans:[{title:'Lesion #2 — Abdomen',risk:19,verdict:'benign',date:'Mar 20, 2026',rules:0}]},
+  {id:'PT-0009',name:'Rajan Patel',age:55,gender:'M',risk:88,verdict:'malignant',location:'Chest',scanDate:'Mar 18, 2026',refDate:'Mar 12, 2026',status:'Urgent',scans:[{title:'Lesion #6 — Chest',risk:88,verdict:'malignant',date:'Mar 18, 2026',rules:7}]},
+  {id:'PT-0007',name:'Ananya Singh',age:27,gender:'F',risk:5,verdict:'benign',location:'Leg',scanDate:'Mar 15, 2026',refDate:'Feb 10, 2026',status:'Cleared',scans:[{title:'Lesion #1 — Leg',risk:5,verdict:'benign',date:'Mar 15, 2026',rules:0}]},
+  {id:'PT-0003',name:'Deepak Gupta',age:48,gender:'M',risk:55,verdict:'uncertain',location:'Back',scanDate:'Mar 12, 2026',refDate:'Feb 20, 2026',status:'Review',scans:[{title:'Lesion #3 — Back',risk:55,verdict:'uncertain',date:'Mar 12, 2026',rules:3}]},
+];
+
+let currentFilter = 'all';
+let currentSearch = '';
+
+function renderPatientTable(patients) {
+  const filtered = patients.filter(p => {
+    const matchSearch = !currentSearch || p.name.toLowerCase().includes(currentSearch) || p.id.toLowerCase().includes(currentSearch);
+    const matchFilter = currentFilter === 'all' || p.verdict === currentFilter || (currentFilter === 'urgent' && p.verdict === 'malignant');
+    return matchSearch && matchFilter;
+  });
+
+  const tbody = document.getElementById('pt-tbody');
+  tbody.innerHTML = filtered.map((p, i) => {
+    const riskClass = p.risk > 60 ? 'high' : p.risk > 35 ? 'medium' : 'low';
+    const vBadge = p.verdict === 'malignant' ? 'badge-red' : p.verdict === 'uncertain' ? 'badge-yellow' : 'badge-green';
+    const vIcon = p.verdict === 'malignant' ? '⚠️' : p.verdict === 'uncertain' ? '🔍' : '✅';
+    const sColor = p.status === 'Urgent' ? 'badge-red' : p.status === 'Review' ? 'badge-yellow' : 'badge-green';
+    const initials = p.name.split(' ').map(n=>n[0]).join('');
+    return `<tr onclick="openPatientProfile(${patients.indexOf(p)})">
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="pt-avatar" style="background:${AVATARS[i%AVATARS.length]}">${initials}</div>
+          <div><div class="pt-name">${p.name}</div><div class="pt-id">#${p.id}</div></div>
+        </div>
+      </td>
+      <td><span class="risk-pill ${riskClass}">${p.risk}%</span></td>
+      <td style="font-size:11px;color:var(--text2)">${p.scanDate}<br><span style="color:var(--text3)">${p.location}</span></td>
+      <td><span class="badge ${vBadge}">${vIcon} ${p.verdict.toUpperCase()}</span></td>
+      <td><span class="badge ${sColor}">${p.status}</span></td>
+      <td style="font-size:11px;color:var(--text3)">${p.refDate}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openPatientProfile(${patients.indexOf(p)})" title="View Profile">👁</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();navigate('reportgen')" title="Generate Report">📄</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();navigate('panel')" title="Review AI">🩺</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pt-count').textContent = `Showing ${filtered.length} of ${patients.length} patients`;
+}
+
+function searchPatients(val) {
+  currentSearch = val.toLowerCase();
+  renderPatientTable(PATIENTS);
+}
+
+function filterPatients(f) {
+  currentFilter = f;
+  renderPatientTable(PATIENTS);
+}
+
+function setFilter(btn, f) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterPatients(f);
+}
+
+function openPatientProfile(idx) {
+  const p = PATIENTS[idx];
+  const initials = p.name.split(' ').map(n=>n[0]).join('');
+  const overlay = document.getElementById('pt-overlay');
+
+  document.getElementById('pp-avatar').textContent = initials;
+  document.getElementById('pp-avatar').style.background = AVATARS[idx % AVATARS.length];
+  document.getElementById('pp-name').textContent = p.name;
+  document.getElementById('pp-meta').textContent = `${p.gender === 'M' ? '♂️' : '♀️'} Age ${p.age} · ID: #${p.id} · Referred: ${p.refDate}`;
+
+  // Stats
+  const stats = document.getElementById('pp-stats');
+  const riskColor = p.risk > 60 ? 'var(--accent3)' : p.risk > 35 ? 'var(--warn)' : 'var(--accent)';
+  stats.innerHTML = `
+    <div class="stat-box"><div class="stat-box-val" style="color:${riskColor}">${p.risk}%</div><div class="stat-box-lbl">Risk Score</div></div>
+    <div class="stat-box"><div class="stat-box-val" style="color:var(--accent2)">${p.scans.length}</div><div class="stat-box-lbl">Total Scans</div></div>
+    <div class="stat-box"><div class="stat-box-val" style="color:var(--purple)">${p.scans.reduce((a,s)=>a+s.rules,0)}</div><div class="stat-box-lbl">Rules Fired</div></div>
+  `;
+
+  // Timeline
+  const tl = document.getElementById('pp-timeline');
+  tl.innerHTML = p.scans.map(s => {
+    const dotColor = s.verdict === 'malignant' ? 'var(--accent3)' : s.verdict === 'uncertain' ? 'var(--warn)' : 'var(--accent)';
+    const vIcon = s.verdict === 'malignant' ? '!' : s.verdict === 'uncertain' ? '?' : '✓';
+    const vBadge = s.verdict === 'malignant' ? 'badge-red' : s.verdict === 'uncertain' ? 'badge-yellow' : 'badge-green';
+    return `
+      <div class="scan-tl-item">
+        <div class="scan-tl-dot" style="border-color:${dotColor};background:${dotColor};color:#000;font-size:7px;display:flex;align-items:center;justify-content:center">${vIcon}</div>
+        <div class="scan-tl-content">
+          <div class="scan-tl-title">${s.title}</div>
+          <div class="scan-tl-sub">Risk: ${s.risk}% · <span class="badge ${vBadge}" style="font-size:9px">${s.verdict.toUpperCase()}</span> · ${s.rules} rules fired</div>
+          <div class="scan-tl-date">${s.date}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('pp-notes').value = '';
+  overlay.classList.add('open');
+}
+
+function closePtProfile(e) {
+  if (e.target === document.getElementById('pt-overlay')) closePtProfileBtn();
+}
+function closePtProfileBtn() {
+  document.getElementById('pt-overlay').classList.remove('open');
+}
+function savePatientNote() {
+  showToast('💾 Patient notes saved', 'success');
+}
+
+/* ══════════════════════════════════════════
+   PAGE 3 — REPORT GENERATOR
+══════════════════════════════════════════ */
+const RG_PATIENTS = [
+  {name:'Rahul Verma',id:'PT-0042',dob:'15 Aug 1988 (Age 37)',gender:'Male',loc:'Left Arm — Forearm',scanDate:'March 27, 2026 at 09:14 AM',verdict:'malignant',risk:82,vsub:'High-confidence malignancy signal detected by neurosymbolic fusion engine.',vicon:'⚠️',vcolor:'#ff4d6d',notes:'Patient presents with a suspicious 9mm lesion on the left forearm with multiple high-risk features. AI analysis indicates MALIGNANT classification with 82% risk score. Six of eight dermoscopic rules were triggered, including Blue-White Veil and Atypical Pigment Network — both strong indicators of melanoma.\n\nClinical recommendation: Urgent biopsy within 2 weeks. Refer to oncology department for further evaluation. Patient has been counseled on findings. Family history of skin cancer noted as an additional risk factor.\n\nFollow-up appointment scheduled for April 10, 2026.'},
+  {name:'Sneha Kulkarni',id:'PT-0038',dob:'22 Apr 1997 (Age 28)',gender:'Female',loc:'Shoulder — Upper Right',scanDate:'March 27, 2026 at 11:32 AM',verdict:'uncertain',risk:47,vsub:'Uncertain — neural and symbolic engines partially disagree. Review recommended.',vicon:'🔍',vcolor:'#ffb347',notes:'UNCERTAIN finding. Features show mild asymmetry and slight border irregularity. Recommend dermoscopy follow-up in 3 months. Patient has family history of melanoma — elevated baseline risk. No blue-white veil or regression structures detected. Monitoring advised.\n\nFollow-up: June 27, 2026.'},
+  {name:'Arjun Sharma',id:'PT-0031',dob:'07 Mar 1980 (Age 46)',gender:'Male',loc:'Neck — Posterior',scanDate:'March 26, 2026 at 02:45 PM',verdict:'malignant',risk:74,vsub:'High malignancy risk — multiple dermoscopic rules triggered.',vicon:'⚠️',vcolor:'#ff4d6d',notes:'Second malignant finding in this patient. 7mm lesion on posterior neck shows multiple high-risk features. Blue-white veil confirmed. Biopsy recommended urgently. Refer to oncology. Follow-up: April 5, 2026.'},
+  {name:'Meera Iyer',id:'PT-0027',dob:'14 Nov 1991 (Age 34)',gender:'Female',loc:'Back — Mid Dorsal',scanDate:'March 25, 2026 at 03:11 PM',verdict:'benign',risk:12,vsub:'Low risk — benign compound nevus pattern identified.',vicon:'✅',vcolor:'#00e5a0',notes:'Benign nevus confirmed. No high-risk features detected. Annual skin monitoring recommended. No further action required at this time. Next checkup: March 2027.'},
+  {name:'Kavya Reddy',id:'PT-0019',dob:'30 Jun 1972 (Age 53)',gender:'Female',loc:'Right Forearm',scanDate:'March 24, 2026 at 10:00 AM',verdict:'benign',risk:8,vsub:'Very low risk — benign classification with high confidence.',vicon:'✅',vcolor:'#00e5a0',notes:'Benign finding. Very low risk lesion, uniform pigmentation, no irregular border or asymmetry. Annual check-up sufficient. Patient reassured.'},
+];
+
+function updatePreview() {
+  const idx = parseInt(document.getElementById('rg-patient')?.value || 0);
+  const p = RG_PATIENTS[idx];
+  if (!p) return;
+
+  document.getElementById('rpdf-pt-name').textContent = p.name;
+  document.getElementById('rpdf-pt-id').textContent = '#' + p.id;
+  document.getElementById('rpdf-pt-dob').textContent = p.dob;
+  document.getElementById('rpdf-pt-gender').textContent = p.gender;
+  document.getElementById('rpdf-pt-loc').textContent = p.loc;
+  document.getElementById('rpdf-pt-scandate').textContent = p.scanDate;
+
+  const vBox = document.getElementById('rpdf-verdict-box');
+  vBox.style.borderColor = p.vcolor;
+  document.getElementById('rpdf-vicon').textContent = p.vicon;
+  document.getElementById('rpdf-vlabel').textContent = p.verdict.toUpperCase();
+  document.getElementById('rpdf-vsub').textContent = p.vsub;
+  document.getElementById('rpdf-risk-pct').textContent = p.risk + '%';
+  document.getElementById('rpdf-risk-pct').style.color = p.vcolor;
+  document.getElementById('rpdf-risk-fill').style.width = p.risk + '%';
+  document.getElementById('rpdf-risk-fill').style.background = p.vcolor;
+
+  // Update notes in preview
+  document.getElementById('rpdf-doctor-note').textContent = document.getElementById('rg-notes')?.value || p.notes;
+
+  showToast('🔄 Preview updated', 'info');
+}
+
+function updateNotes(val) {
+  document.getElementById('rpdf-doctor-note').textContent = val;
+}
+
+function toggleSection(id, cb) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = cb.checked ? '' : 'none';
+}
+
+function toggleWatermark(cb) {
+  const wm = document.getElementById('rpdf-watermark');
+  if (wm) wm.style.display = cb.checked ? '' : 'none';
+}
+
+function loadTemplate(type) {
+  const notes = document.getElementById('rg-notes');
+  if (!notes) return;
+  if (type === 'brief') {
+    notes.value = 'Brief clinical summary: AI analysis complete. Verdict and risk score noted. Recommend appropriate follow-up per clinical guidelines.';
+  } else if (type === 'followup') {
+    notes.value = 'Follow-up visit report. Previous lesion reviewed. Comparative analysis completed. Status updated based on current scan findings.';
+  } else {
+    const idx = parseInt(document.getElementById('rg-patient')?.value || 0);
+    notes.value = RG_PATIENTS[idx]?.notes || '';
+  }
+  updateNotes(notes.value);
+  showToast('📋 Template loaded', 'success');
+}
+
+/* PDF Export simulation */
+function exportPDF() {
+  const btn = document.getElementById('export-btn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  const prog = document.getElementById('export-progress');
+  const bar = document.getElementById('exp-bar');
+  const pct = document.getElementById('exp-pct');
+  const lbl = document.getElementById('exp-label');
+  prog.classList.add('show');
+
+  const steps = ['Preparing patient data...','Rendering ABCDE table...','Embedding AI findings...','Adding doctor signature...','Compiling PDF...','Finalizing...'];
+  let pv = 0, si = 0;
+  const iv = setInterval(() => {
+    pv = Math.min(pv + 16, 100);
+    bar.style.width = pv + '%';
+    pct.textContent = pv + '%';
+    if (si < steps.length) lbl.textContent = steps[si++];
+    if (pv >= 100) {
+      clearInterval(iv);
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      setTimeout(() => {
+        prog.classList.remove('show');
+        bar.style.width = '0%';
+        showToast('✅ PDF exported successfully! (Demo mode — connect real PDF library to download)', 'success');
+      }, 600);
+    }
+  }, 350);
+}
+
+/* Signature pad */
+function initSigPad() {
+  const canvas = document.getElementById('sig-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let drawn = false;
+
+  canvas.addEventListener('mousedown', e => { drawing = true; ctx.beginPath(); ctx.moveTo(...getPos(e)); });
+  canvas.addEventListener('mousemove', e => { if (!drawing) return; drawn = true; ctx.lineTo(...getPos(e)); ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke(); updateSigPlaceholder(); });
+  canvas.addEventListener('mouseup', () => drawing = false);
+  canvas.addEventListener('mouseleave', () => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); ctx.moveTo(...getPos(e.touches[0])); });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; drawn = true; ctx.lineTo(...getPos(e.touches[0])); ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke(); updateSigPlaceholder(); });
+  canvas.addEventListener('touchend', () => drawing = false);
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return [(e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY];
+  }
+
+  function updateSigPlaceholder() {
+    if (drawn) document.getElementById('sig-placeholder').classList.add('hidden');
+  }
+}
+
+function clearSig() {
+  const canvas = document.getElementById('sig-canvas');
+  if (!canvas) return;
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('sig-placeholder').classList.remove('hidden');
+}
+
+/* ══ INIT ══ */
+initActivityChart();
+initAgreeChart();
+renderPatientTable(PATIENTS);
+</script>
+</body>
+</html>
