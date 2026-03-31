@@ -49,6 +49,54 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .user-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
 .tag{font-size:10px;font-weight:500;letter-spacing:.08em;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--text2);text-transform:uppercase}
 .tag.live{border-color:var(--accent);color:var(--accent);animation:pulse-b 2s infinite}
+.topbar-nav {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+
+/* button → link style */
+.nav-btn {
+  text-decoration: none;
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 14px;
+  font-family: var(--fh);
+  font-weight: 600;
+  padding: 6px 10px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* hover */
+.nav-btn:hover {
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(201,168,78,0.6);
+}
+
+/* underline */
+.nav-btn::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0%;
+  height: 2px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  transition: 0.3s;
+}
+
+.nav-btn:hover::after {
+  width: 100%;
+}
+
+/* active */
+.nav-btn.active {
+  color: var(--accent);
+}
 @keyframes pulse-b{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.4)}50%{box-shadow:0 0 0 4px rgba(0,229,160,0)}}
 
 /* ══ LAYOUT ══ */
@@ -317,12 +365,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <!-- ══ TOPBAR ══ -->
 <div class="topbar">
   <div class="logo"><div class="logo-icon">🔬</div>Derm<em>AI</em></div>
-  <nav class="topbar-nav">
-    <button class="nav-btn" onclick="showToast('Navigating to Dashboard','info')">📊 Dashboard</button>
-    <button class="nav-btn" onclick="showToast('Navigating to Analyze','info')">🔬 Analyze</button>
-    <button class="nav-btn" onclick="showToast('Navigating to Reports','info')">📋 Reports</button>
-    <button class="nav-btn active">⚙️ Settings</button>
-  </nav>
+<nav class="topbar-nav">
+  <a href="index.html" class="nav-btn">Dashboard</a>
+  <a href="analyze.html" class="nav-btn">Analyze</a>
+  <a href="drpanel.html" class="nav-btn">Doctor Panel</a>
+  <a href="settings.html" class="nav-btn active">⚙️ Settings</a>
+  <a href="#">How It Works</a>
+</nav>
   <div class="topbar-right">
     <span class="tag live">● Live</span>
     <div class="user-chip">
